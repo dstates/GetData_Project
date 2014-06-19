@@ -8,7 +8,8 @@ fetchData <- function (url = "https://d396qusza40orc.cloudfront.net/getdata%2Fpr
     dataZipFile <<- file
 }
 
-getColNames <- function(file = "UCI HAR Dataset/features.txt", force = FALSE) {
+getRealColNames <- function (file = "UCI HAR Dataset/features.txt",
+                             force = FALSE) {
     if (!exists("dataZipFile"))
         fetchData()
     # use globally scoped variable to cache names
@@ -18,8 +19,11 @@ getColNames <- function(file = "UCI HAR Dataset/features.txt", force = FALSE) {
             header = FALSE, row.names = 1, stringsAsFactors = FALSE,
             col.names = c("idx", "names")
         )
-    # strip parenthesis from names?
-    colnames <- gsub("[()-]", "", featuresColNames$names)
+    invisible(featuresColNames$names)
+}
+
+getColNames <- function() {
+    colnames <- gsub("[()-]", "", getRealColNames())
     invisible(colnames)
 }
 
@@ -35,15 +39,39 @@ getActivityLabels <- function(file = "UCI HAR Dataset/activity_labels.txt",
             col.names = c("idx", "activity")
         )
     # any processing needed?
-    invisible(activityLabels)
+    invisible(activityLabels$activity)
 }
 
-loadTestData <- function(file = "UCI HAR Dataset/test/X_test.txt") {
-    testdata <- read.table(file, header = FALSE,
-                           colClasses = rep("numeric", length(getColNames())),
-                           col.names = getColNames(), nrow = 5
-                           )
-    invisible(testdata)
+loadAndMergeData <- function(files = list(
+    list(data = "UCI HAR Dataset/test/X_test.txt",
+         activities = "UCI HAR Dataset/test/y_test.txt"),
+    list(data = "UCI HAR Dataset/train/X_train.txt",
+         activities = "UCI HAR Dataset/test/y_test.txt")
+        )
+    )
+{
+    do.call("rbind",
+            lapply(files, function (file) {
+                actData <- read.table(unz(dataZipFile, filename=file$data),
+                                      header = FALSE,
+                                      colClasses = rep("numeric",
+                                                       length(getColNames())),
+                                      col.names = getColNames()
+                )
+                activities <- read.table(unz(dataZipFile,
+                                             filename=file$activities),
+                                         header = FALSE,
+                                         colClasses = c("integer"),
+                                         col.names=c("val")
+                )
+                actData$activity <- getActivityLabels()[activities$val]
+                actData
+            })
+    )
+}
+
+extractMeanAndStd <- function(actData) {
+    actData[ , grep("mean()|std()", getRealColNames()) ]
 }
 
 loadTestDataActivities <- function (file = "UCI HAR Dataset/test/y_test.txt") {
