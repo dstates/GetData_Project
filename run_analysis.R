@@ -2,7 +2,9 @@
 #
 # Download dataset and cache local filename into dataZipFile
 
-fetchData <- function (url = "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip") {
+fetchData <- function (url = 
+"https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+) {
     # extract file name from URL
     file = basename(URLdecode(url))
     # download file if it doesn't already exists
@@ -218,13 +220,21 @@ extractMeanAndStd <- function(actData) {
 
 reshapeAndSummarize <- function(actData) {
     actDataM <- melt(actData, id.vars = c("subject","activity"))
-    actDataM <- ddply(actDataM, .(subject, activity, variable), function(x) { c(mean = mean(x$value)) })
+    actDataM <- ddply(actDataM, .(subject, activity, variable),
+                      function(x) { c(mean = mean(x$value)) })
     actDataM <- cbind(colsplit(actDataM$variable, "_", c("measurement", "axis")),
                       actDataM[, !(names(actDataM) %in% c("variable"))])
     actDataM <- dcast(actDataM, ... ~ axis, value.var = "mean")
-    actDataM <- actDataM[, c("subject", "activity", "measurement", "X","Y", "Z", "Magnitude")]
-    actDataM <- actDataM[with(actDataM, order(as.integer(as.character(subject)), activity)), ]
-    actDataM <- transform(actDataM, subject=factor(subject), activity=factor(activity), measurement=factor(measurement))
+    actDataM <- actDataM[, c("subject", "activity", "measurement",
+                             "X","Y", "Z", "Magnitude")]
+    actDataM <- actDataM[with(actDataM, 
+                              order(as.integer(as.character(subject)),
+                                    activity)),
+                         ]
+    actDataM <- transform(actDataM, subject=factor(subject),
+                          activity=factor(activity),
+                          measurement=factor(measurement)
+                          )
     actDataM
 }
 
